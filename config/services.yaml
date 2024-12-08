@@ -1,13 +1,16 @@
 services:
 
-  dto.resolver_factory:
-    class: "Teoalboo\DtoValidator\Resolver\ResolverFactory"
+  _defaults:
+    autowire: true      # Automatically injects dependencies in your services.
+    autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+
+  Teoalboo\DtoValidator\Resolver\ResolverFactory:
     arguments: 
       $container: '@service_container'
 
-  App\DtoValidator\Validator\DtoPayloadValidator:
+  Teoalboo\DtoValidator\Validator\DtoPayloadValidator:
     arguments: 
-      $factory: '@dto.resolver_factory'
+      $factory: '@Teoalboo\DtoValidator\Resolver\ResolverFactory'
       $request: '@request_stack'
 
   Teoalboo\DtoValidator\EventSubscriber\DtoEventsSubscriber:
