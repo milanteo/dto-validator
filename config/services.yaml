@@ -5,7 +5,7 @@ services:
 
   Teoalboo\DtoValidator\Resolver\: 
     public: true
-    resource: './Resolver/'
+    resource: '../src/Resolver/'
 
   Teoalboo\DtoValidator\Validator\DtoPayloadValidator:
     arguments: 
