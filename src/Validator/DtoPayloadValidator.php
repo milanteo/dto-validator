@@ -7,6 +7,7 @@ use Teoalboo\DtoValidator\DtoFieldType;
 use Teoalboo\DtoValidator\Exception\DtoFieldValidationException;
 use Teoalboo\DtoValidator\Exception\DtoPayloadValidationException;
 use Ds\Map;
+use Psr\Container\ContainerInterface;
 use ReflectionClass;
 use stdClass;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
@@ -18,13 +19,12 @@ use Symfony\Component\Validator\Constraints\NotNull;
 use Symfony\Component\Validator\Constraints\Type;
 use Symfony\Component\Validator\ConstraintValidator;
 use Symfony\Component\Validator\Validator\ContextualValidatorInterface;
-use Teoalboo\DtoValidator\Resolver\ResolverFactory;
 use function Symfony\Component\String\s;
 
 class DtoPayloadValidator extends ConstraintValidator {
 
     public function __construct(
-        private ResolverFactory $factory,
+        private ContainerInterface $container,
         private RequestStack $request
     ) { }
 
@@ -114,7 +114,7 @@ class DtoPayloadValidator extends ConstraintValidator {
                     
                 } else {
         
-                    $resolver = $this->factory->createResolver($attribute->resolver->resolvedBy());
+                    $resolver = $this->container->get($attribute->resolver->resolvedBy());
                     
                     $dto->$property = $resolver->resolve($attribute->resolver, $property, $value);
         

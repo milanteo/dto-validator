@@ -1,20 +1,19 @@
 services:
 
-  _defaults:
-    autowire: true      # Automatically injects dependencies in your services.
-    autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+  _defaults: 
+    autoconfigure: true 
+    autowire: true
 
-  Teoalboo\DtoValidator\Resolver\ResolverFactory:
-    arguments: 
-      $container: '@service_container'
+  Teoalboo\DtoValidator\Resolver\: 
+    public: true
+    resource: '../src/Resolver/*Resolver.php'
 
   Teoalboo\DtoValidator\Validator\DtoPayloadValidator:
     arguments: 
-      $factory: '@Teoalboo\DtoValidator\Resolver\ResolverFactory'
-      $request: '@request_stack'
+      $container: '@service_container'
+      $request:   '@request_stack'
 
   Teoalboo\DtoValidator\EventSubscriber\DtoEventsSubscriber:
     arguments: 
       $translator: '@translator'
-      $validator:  '@validator'    
-    tags: ['kernel.event_subscriber']
+      $validator:  '@validator'
