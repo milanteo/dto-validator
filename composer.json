@@ -1,0 +1,23 @@
+{
+    "name": "teoalboo/dto-validator",
+    "description": "Rest api's dtos made simple",
+    "type": "library",
+    "autoload": {
+        "psr-4": {
+            "Teoalboo\\DtoValidator\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "teoalboo"
+        }
+    ],
+    "require": {
+        "symfony/http-kernel": "^7.2",
+        "symfony/expression-language": "^7.2",
+        "symfony/validator": "^7.2",
+        "symfony/http-foundation": "^7.2",
+        "symfony/translation": "^7.2",
+        "doctrine/orm": "^3.3"
+    }
+}
