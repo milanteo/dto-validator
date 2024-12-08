@@ -14,7 +14,7 @@ class NestedDtoResolver extends DtoResolver {
         private ValidatorInterface $validator
     ) { }
 
-    public function process(mixed $resolver, string $propertyName, mixed $dtoValue): mixed {
+    public function resolve(mixed $resolver, string $propertyName, mixed $dtoValue): mixed {
 
         $errors = [];
         

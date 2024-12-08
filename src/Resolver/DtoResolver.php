@@ -6,7 +6,7 @@ use Teoalboo\DtoValidator\Exception\DtoFieldValidationException;
 
 class DtoResolver {
 
-    public function process(mixed $resolver, string $propertyName, mixed $dtoValue): mixed {
+    public function resolve(mixed $resolver, string $propertyName, mixed $dtoValue): mixed {
 
         return $dtoValue;
     }

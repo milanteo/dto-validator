@@ -1,19 +1,5 @@
 services:
 
-  _defaults: 
-    autoconfigure: true 
-    autowire: true
-
-  Teoalboo\DtoValidator\Resolver\: 
-    public: true
-    resource: '../src/Resolver/*Resolver.php'
-
-  Teoalboo\DtoValidator\Validator\DtoPayloadValidator:
+  Teoalboo\DtoValidator\Resolver\ResolverFactory:
     arguments: 
       $container: '@service_container'
-      $request:   '@request_stack'
-
-  Teoalboo\DtoValidator\EventSubscriber\DtoEventsSubscriber:
-    arguments: 
-      $translator: '@translator'
-      $validator:  '@validator'

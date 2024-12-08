@@ -11,7 +11,7 @@ class FetchEntityResolver extends DtoResolver {
         private EntityManagerInterface $em
     ) {}
 
-    public function process(mixed $resolver, string $propertyName, mixed $dtoValue): mixed {
+    public function resolve(mixed $resolver, string $propertyName, mixed $dtoValue): mixed {
 
         if(is_array($dtoValue)){
 
