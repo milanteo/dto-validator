@@ -1,0 +1,15 @@
+services:
+
+  Teoalboo\DtoValidator\Resolver\: 
+    public: true
+    resource: './Resolver/'
+
+  Teoalboo\DtoValidator\Validator\DtoPayloadValidator:
+    arguments: 
+      $container: '@service_container'
+      $request:   '@request_stack'
+
+  Teoalboo\DtoValidator\EventSubscriber\DtoEventsSubscriber:
+    arguments: 
+      $translator: '@translator'
+      $validator:  '@validator'
