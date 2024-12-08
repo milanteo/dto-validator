@@ -108,15 +108,15 @@ class DtoPayloadValidator extends ConstraintValidator {
 
                 $this->checkValueType($context, $property, $value, $attribute);
 
-                if(is_null($value) || is_null($attribute->processor)) { 
+                if(is_null($value) || is_null($attribute->resolver)) { 
 
                     $dto->$property = $value;
                     
                 } else {
         
-                    $resolver = $this->container->get($attribute->processor->resolvedBy());
+                    $resolver = $this->container->get($attribute->resolver->resolvedBy());
                     
-                    $dto->$property = $resolver->process($attribute->processor, $property, $value);
+                    $dto->$property = $resolver->process($attribute->resolver, $property, $value);
         
                 }
 

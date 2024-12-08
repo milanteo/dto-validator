@@ -1,10 +1,10 @@
 <?php
 
-namespace Teoalboo\DtoValidator\Processor;
+namespace Teoalboo\DtoValidator\Resolver;
 
 use Teoalboo\DtoValidator\Resolver\FetchEntityResolver;
 
-class FetchEntity implements DtoProcessorInterface {
+class FetchEntity implements DtoResolverInterface {
 
     public function __construct(
         public string $entity, 

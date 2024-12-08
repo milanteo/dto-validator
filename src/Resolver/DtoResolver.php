@@ -4,9 +4,9 @@ namespace Teoalboo\DtoValidator\Resolver;
 
 use Teoalboo\DtoValidator\Exception\DtoFieldValidationException;
 
-class DtoProcessorResolver {
+class DtoResolver {
 
-    public function process(mixed $processor, string $propertyName, mixed $dtoValue): mixed {
+    public function process(mixed $resolver, string $propertyName, mixed $dtoValue): mixed {
 
         return $dtoValue;
     }

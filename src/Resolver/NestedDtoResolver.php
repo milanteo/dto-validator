@@ -3,18 +3,18 @@
 namespace Teoalboo\DtoValidator\Resolver;
 
 use Teoalboo\DtoValidator\Exception\DtoPayloadValidationException;
-use Teoalboo\DtoValidator\Processor\NestedDto;
+use Teoalboo\DtoValidator\Resolver\NestedDto;
 use Teoalboo\DtoValidator\Validator\DtoPayload;
 use stdClass;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
-class NestedDtoResolver extends DtoProcessorResolver {
+class NestedDtoResolver extends DtoResolver {
 
     public function __construct(
         private ValidatorInterface $validator
     ) { }
 
-    public function process(mixed $processor, string $propertyName, mixed $dtoValue): mixed {
+    public function process(mixed $resolver, string $propertyName, mixed $dtoValue): mixed {
 
         $errors = [];
         
@@ -26,7 +26,7 @@ class NestedDtoResolver extends DtoProcessorResolver {
 
                 try {
         
-                    $valid[] = $this->validateDtoInstance($processor, $item);
+                    $valid[] = $this->validateDtoInstance($resolver, $item);
 
         
                 } catch(DtoPayloadValidationException $e) {
@@ -41,7 +41,7 @@ class NestedDtoResolver extends DtoProcessorResolver {
 
             try {
 
-                $valid = $this->validateDtoInstance($processor, $dtoValue);
+                $valid = $this->validateDtoInstance($resolver, $dtoValue);
         
             } catch(DtoPayloadValidationException $e) {
     
@@ -60,22 +60,22 @@ class NestedDtoResolver extends DtoProcessorResolver {
 
     }
 
-    public function validateDtoInstance(NestedDto $processor, object $value) {
+    public function validateDtoInstance(NestedDto $resolver, object $value) {
 
-        if(is_array($processor->config)) {
+        if(is_array($resolver->config)) {
 
             $child = new stdClass();
 
-            foreach (array_keys($processor->config) as $key) {
+            foreach (array_keys($resolver->config) as $key) {
                 
                 $child->$key = null;
             }
 
-            $this->validator->validate($child, new DtoPayload(content: $value, fields: $processor->config));
+            $this->validator->validate($child, new DtoPayload(content: $value, fields: $resolver->config));
 
         } else {
 
-            $child = new $processor->config();
+            $child = new $resolver->config();
             
             $this->validator->validate($child, new DtoPayload(content: $value));
 

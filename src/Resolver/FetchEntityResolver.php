@@ -5,13 +5,13 @@ namespace Teoalboo\DtoValidator\Resolver;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManagerInterface;
 
-class FetchEntityResolver extends DtoProcessorResolver {
+class FetchEntityResolver extends DtoResolver {
 
     public function __construct(
         private EntityManagerInterface $em
     ) {}
 
-    public function process(mixed $processor, string $propertyName, mixed $dtoValue): mixed {
+    public function process(mixed $resolver, string $propertyName, mixed $dtoValue): mixed {
 
         if(is_array($dtoValue)){
 
@@ -19,8 +19,8 @@ class FetchEntityResolver extends DtoProcessorResolver {
     
             $processed = $this->em->createQueryBuilder()
                 ->select('e')
-                ->from($processor->entity, 'e')
-                ->where($expr->in("e.{$processor->identifier}", ':value'))
+                ->from($resolver->entity, 'e')
+                ->where($expr->in("e.{$resolver->identifier}", ':value'))
                 ->setParameter('value', $dtoValue)
                 ->getQuery()
                 ->getResult()
@@ -36,8 +36,8 @@ class FetchEntityResolver extends DtoProcessorResolver {
         } 
 
         $processed = $this->em
-            ->getRepository($processor->entity)
-            ->findOneBy([ $processor->identifier => $dtoValue ])
+            ->getRepository($resolver->entity)
+            ->findOneBy([ $resolver->identifier => $dtoValue ])
         ;
 
         if(is_null($processed)) {

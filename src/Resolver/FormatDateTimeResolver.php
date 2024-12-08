@@ -4,13 +4,13 @@ namespace Teoalboo\DtoValidator\Resolver;
 
 use DateTime;
 
-class FormatDateTimeResolver extends DtoProcessorResolver {
+class FormatDateTimeResolver extends DtoResolver {
 
-    public function process(mixed $processor, string $propertyName, mixed $dtoValue): mixed {
+    public function process(mixed $resolver, string $propertyName, mixed $dtoValue): mixed {
 
         if(is_array($dtoValue)) {
 
-            $processed = array_map(fn(string $v) => DateTime::createFromFormat($processor->format, $v), $dtoValue);
+            $processed = array_map(fn(string $v) => DateTime::createFromFormat($resolver->format, $v), $dtoValue);
 
             if(array_any($processed, fn($v) => !$v instanceof DateTime)) {
 
@@ -21,7 +21,7 @@ class FormatDateTimeResolver extends DtoProcessorResolver {
 
         }
 
-        $processed = DateTime::createFromFormat($processor->format, $dtoValue);
+        $processed = DateTime::createFromFormat($resolver->format, $dtoValue);
 
         if(!$processed instanceof DateTime) {
 

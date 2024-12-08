@@ -1,10 +1,10 @@
 <?php
 
-namespace Teoalboo\DtoValidator\Processor;
+namespace Teoalboo\DtoValidator\Resolver;
 
 use Teoalboo\DtoValidator\Resolver\FormatDateTimeResolver;
 
-class FormatDateTime implements DtoProcessorInterface {
+class FormatDateTime implements DtoResolverInterface {
 
     public function __construct(
         public string $format = 'd-m-Y'

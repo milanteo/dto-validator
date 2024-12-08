@@ -1,10 +1,10 @@
 <?php
 
-namespace Teoalboo\DtoValidator\Processor;
+namespace Teoalboo\DtoValidator\Resolver;
 
 use Teoalboo\DtoValidator\Resolver\NestedDtoResolver;
 
-class NestedDto implements DtoProcessorInterface {
+class NestedDto implements DtoResolverInterface {
 
     public function __construct(
         public array | string $config
