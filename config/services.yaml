@@ -1,5 +1,9 @@
 services:
 
+  _defaults: 
+    autoconfigure: true 
+    autowire: true
+
   Teoalboo\DtoValidator\Resolver\ResolverFactory:
     arguments: 
       $container: '@service_container'
@@ -8,4 +12,3 @@ services:
     arguments: 
       $translator: '@translator'
       $validator:  '@validator'    
-    tags: ['kernel.event_subscriber']
