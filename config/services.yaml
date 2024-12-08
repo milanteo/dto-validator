@@ -10,6 +10,7 @@ services:
       $request:   '@request_stack'
 
   Teoalboo\DtoValidator\EventSubscriber\DtoEventsSubscriber:
+    tags: ['kernel.event_subscriber']
     arguments: 
       $translator: '@translator'
       $validator:  '@validator'
