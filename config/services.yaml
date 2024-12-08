@@ -1,9 +1,5 @@
 services:
 
-  _defaults: 
-    autoconfigure: true 
-    autowire: true
-
   Teoalboo\DtoValidator\Resolver\: 
     public: true
     resource: '../src/Resolver/*Resolver.php'
@@ -13,7 +9,12 @@ services:
       $container: '@service_container'
       $request:   '@request_stack'
 
+  Teoalboo\DtoValidator\Validator\NotExistValidator:
+    arguments: 
+      $em: '@doctrine.orm.entity_manager'
+
   Teoalboo\DtoValidator\EventSubscriber\DtoEventsSubscriber:
     arguments: 
       $translator: '@translator'
       $validator:  '@validator'
+    tags: ['kernel.event_subscriber']
