@@ -212,10 +212,8 @@ class DtoPayloadValidator extends ConstraintValidator {
 
             if($this->evaluateBoolOrExpression($constraint, $attribute->disabled, $dto)) {
 
-                $toDisable = array_filter($constraint->getEnabledProperties(includeErrorProperties: true), fn($att) => in_array($propertyName, $att->disabledWith));
-
                 // Viene disabilitata la proprietà stessa e tutte quelle che ne dipendono
-                $constraint->disableProperties([ $propertyName => $attribute, ...$toDisable ]);
+                $constraint->disableProperty($propertyName);
 
             } 
             
@@ -367,7 +365,7 @@ class DtoPayloadValidator extends ConstraintValidator {
 
     private function throwErrors(DtoPayload $constraint): void {
 
-        if($errors = $constraint->getAllErrors()) {
+        if($errors = $constraint->getPayloadErrors()) {
 
             throw new DtoPayloadValidationException($errors, $constraint->errorCode);
         }

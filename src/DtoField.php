@@ -7,6 +7,10 @@ use Attribute;
 #[Attribute(Attribute::TARGET_PROPERTY)]
 class DtoField {
 
+    public bool $isDisabled = false;
+
+    public array $errors = [];
+
     public function __construct(
         public array $types,
         public ?DtoResolverInterface $resolver = null,
