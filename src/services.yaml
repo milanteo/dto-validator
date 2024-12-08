@@ -1,4 +1,7 @@
 services:
+  _defaults: 
+    autoconfigure: true 
+    autowire: true
 
   Teoalboo\DtoValidator\Resolver\: 
     public: true
