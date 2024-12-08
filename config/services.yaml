@@ -4,9 +4,9 @@ services:
     autoconfigure: true 
     autowire: true
 
-  Teoalboo\DtoValidator\Resolver\: 
+  Teoalboo\DtoValidator\Resolver\*Resolver.php: 
     public: true
-    resource: '../src/Resolver/'
+    resource: '../src/Resolver/*Resolver.php'
 
   Teoalboo\DtoValidator\Validator\DtoPayloadValidator:
     arguments: 
