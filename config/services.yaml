@@ -1,14 +1,17 @@
 services:
 
-  _defaults: 
-    autoconfigure: true 
-    autowire: true
-
-  Teoalboo\DtoValidator\Resolver\ResolverFactory:
+  dto.resolver_factory:
+    class: "Teoalboo\DtoValidator\Resolver\ResolverFactory"
     arguments: 
       $container: '@service_container'
+
+  App\DtoValidator\Validator\DtoPayloadValidator:
+    arguments: 
+      $factory: '@dto.resolver_factory'
+      $request: '@request_stack'
 
   Teoalboo\DtoValidator\EventSubscriber\DtoEventsSubscriber:
     arguments: 
       $translator: '@translator'
       $validator:  '@validator'    
+    tags: ['kernel.event_subscriber']
