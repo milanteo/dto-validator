@@ -1,5 +1,9 @@
 services:
 
+  _defaults: 
+    autoconfigure: true 
+    autowire: true
+
   Teoalboo\DtoValidator\Resolver\: 
     public: true
     resource: '../src/Resolver/'
@@ -10,7 +14,6 @@ services:
       $request:   '@request_stack'
 
   Teoalboo\DtoValidator\EventSubscriber\DtoEventsSubscriber:
-    tags: ['kernel.event_subscriber']
     arguments: 
       $translator: '@translator'
       $validator:  '@validator'
