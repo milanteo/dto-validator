@@ -140,9 +140,9 @@ class DtoEventsSubscriber implements EventSubscriberInterface {
             ]);
         }
 
-        if (!\array_key_exists($subjectRef, $arguments)) {
+        if (!array_key_exists($subjectRef, $arguments)) {
 
-            throw new RuntimeException(\sprintf('Could not find the subject "%s".', $subjectRef));
+            throw new RuntimeException(sprintf('Could not find the subject "%s".', $subjectRef));
         }
 
         return $arguments[$subjectRef];
