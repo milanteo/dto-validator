@@ -8,7 +8,7 @@ use Symfony\Component\Validator\Attribute\HasNamedArguments;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\ExpressionLanguage\Expression;
 
-#[Attribute]
+#[Attribute()]
 class DtoPayload extends Constraint {
 
     #[HasNamedArguments]
@@ -19,11 +19,6 @@ class DtoPayload extends Constraint {
         $payload = null
     ) {
         parent::__construct([], $groups, $payload);
-    }
-
-    public function getTargets(): string {
-
-        return self::CLASS_CONSTRAINT;
     }
 
 }

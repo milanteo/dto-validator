@@ -5,7 +5,7 @@ namespace Teoalboo\DtoValidator\EventSubscriber;
 use Teoalboo\DtoValidator\Exception\DtoFieldValidationException;
 use Teoalboo\DtoValidator\Exception\DtoPayloadValidationException;
 use Teoalboo\DtoValidator\Validator\DtoPayload;
-use ReflectionClass;
+use ReflectionFunction;
 use RuntimeException;
 use stdClass;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -40,7 +40,7 @@ class DtoEventsSubscriber implements EventSubscriberInterface {
         
         if($e instanceof DtoPayloadValidationException) {
 
-            $event->setResponse(new JsonResponse($this->formatErrors($e->errors), $e->errorCode));
+            $event->setResponse(new JsonResponse(data: $this->formatErrors($e->errors), status: $e->errorCode));
 
         }
 
@@ -90,19 +90,21 @@ class DtoEventsSubscriber implements EventSubscriberInterface {
 
         $request = $this->stack->getCurrentRequest();
 
-        $arguments = $event->getNamedArguments();
+        $namedArguments = $event->getNamedArguments();
 
-        $dtos = array_filter($arguments, fn($v) => is_object($v) && $v instanceof BaseDto);
+        $reflector = new ReflectionFunction($event->getController()(...));
 
-        foreach ($dtos as $dto) {
+        $dtoParams = array_filter($reflector->getParameters(), fn($p) => is_subclass_of($p->getType()->getName(), BaseDto::class));
+
+        foreach ($dtoParams as $dtoParam) {
+
+            [ $dtoParam->getName() => $dto ] = $namedArguments;
 
             $decode = json_decode($request->getContent());
 
             $dto->setContent(is_object($decode) ? $decode : new stdClass());
             
-            $reflection = new ReflectionClass($dto);
-
-            [ $attribute ] = $reflection->getAttributes(DtoPayload::class) + [ null ];
+            [ $attribute ] = $dtoParam->getAttributes(DtoPayload::class) + [ null ];
 
             $attribute = $attribute?->newInstance() ?? new DtoPayload();
 
@@ -111,10 +113,10 @@ class DtoEventsSubscriber implements EventSubscriberInterface {
                 if (is_array($subjectRef)) {
                     foreach ($subjectRef as $refKey => $ref) {
 
-                        $subject[$refKey] = $this->getDtoSubject($ref, $request, $arguments);
+                        $subject[$refKey] = $this->getDtoSubject($ref, $request, $namedArguments);
                     }
                 } else {
-                    $subject = $this->getDtoSubject($subjectRef, $request, $arguments);
+                    $subject = $this->getDtoSubject($subjectRef, $request, $namedArguments);
                 }
 
                 $attribute->subject = $subject;

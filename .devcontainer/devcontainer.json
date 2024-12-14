@@ -15,6 +15,7 @@
 		"vscode": {
 			"extensions": [
 				"bmewburn.vscode-intelephense-client",
+				"xdebug.php-debug",
 				"eamodio.gitlens",
 				"donjayamanne.githistory",
 				"ms-azuretools.vscode-docker",
