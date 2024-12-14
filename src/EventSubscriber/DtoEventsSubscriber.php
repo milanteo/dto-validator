@@ -2,7 +2,6 @@
 
 namespace Teoalboo\DtoValidator\EventSubscriber;
 
-use Teoalboo\DtoValidator\Exception\DtoFieldValidationException;
 use Teoalboo\DtoValidator\Exception\DtoPayloadValidationException;
 use Teoalboo\DtoValidator\Validator\DtoPayload;
 use ReflectionFunction;
@@ -46,22 +45,11 @@ class DtoEventsSubscriber implements EventSubscriberInterface {
 
     }
 
-    public function formatErrors(string | array | DtoFieldValidationException $errors): array | string {
+    public function formatErrors(string | array $errors): array | string {
 
         if(is_array($errors)) {
 
-            if(array_any($errors, fn($v) => $v instanceof DtoFieldValidationException)) {
-            
-                $payload = [];
-
-                foreach ($errors as $exception) {
-                    
-                    $payload[$exception->getPropertyPath()] = $this->formatErrors($exception);
-                }
-
-                return $payload;
-
-            } elseif(!array_is_list($errors)) {
+            if(!array_is_list($errors)) {
 
                 $payload = [];
 
@@ -76,11 +64,7 @@ class DtoEventsSubscriber implements EventSubscriberInterface {
 
             return array_map(fn($err) => $this->translator->trans($err, domain: 'validators'), $errors);
 
-        } elseif($errors instanceof DtoFieldValidationException) {
-
-            return $this->formatErrors($errors->getMessages());
-
-        } 
+        }
 
         return $this->translator->trans($errors, domain: 'validators');
 
