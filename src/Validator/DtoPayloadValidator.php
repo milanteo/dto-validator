@@ -255,7 +255,7 @@ class DtoPayloadValidator extends ConstraintValidator {
 
             $payload = new Map($dto->getParametersValues());
 
-            $subject = $constraint->subject;
+            $subject = $constraint->getSubject();
 
             $onUpdate = !!$subject ? true  : false;
 
