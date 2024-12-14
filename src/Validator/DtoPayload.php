@@ -11,14 +11,30 @@ use Symfony\Component\ExpressionLanguage\Expression;
 #[Attribute()]
 class DtoPayload extends Constraint {
 
+    private mixed $subject = null;
+
     #[HasNamedArguments]
     public function __construct(
         public int   $errorCode = Response::HTTP_BAD_REQUEST,
-        public array|string|Expression|null $subject = null,
-        ?array $groups = null, 
-        $payload = null
+        array|string|Expression|null $subject = null
     ) {
-        parent::__construct([], $groups, $payload);
+
+        $this->subject = $subject;
+
+        parent::__construct([], null, null);
+    }
+
+    public function setSubject(mixed $subject): self {
+
+        $this->subject = $subject;
+
+        return $this;
+
+    }
+
+    public function getSubject(): mixed {
+
+        return $this->subject;
     }
 
 }

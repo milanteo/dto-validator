@@ -11,7 +11,6 @@ use Psr\Container\ContainerInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 use Symfony\Component\Validator\Exception\UnexpectedValueException;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\Constraints\AbstractComparison;
 use Symfony\Component\Validator\Constraints\NotBlank;
@@ -47,7 +46,7 @@ class DtoPayloadValidator extends ConstraintValidator {
 
         $this->checkValues($validator, $dto);
         
-        $this->checkDisabledProperties($dto, $constraint);
+        $this->checkDisabledProperties($validator, $dto, $constraint);
         
         $this->checkNullableProperties($validator, $dto, $constraint);
         
@@ -97,7 +96,7 @@ class DtoPayloadValidator extends ConstraintValidator {
 
     }
 
-    function checkDisabledProperties(BaseDto $dto, DtoPayload $constraint, array &$checkedFields = []): void {
+    function checkDisabledProperties(ValidatorInterface $validator, BaseDto $dto, DtoPayload $constraint, array &$checkedFields = []): void {
 
         $currentCheck = array_filter($dto->getEnabledProperties(includeErrorProperties: true), function($attribute, $propertyName) use (&$checkedFields) {
 
@@ -129,7 +128,7 @@ class DtoPayloadValidator extends ConstraintValidator {
 
         }
 
-        $this->checkDisabledProperties($dto, $constraint, $checkedFields);
+        $this->checkDisabledProperties($validator, $dto, $constraint, $checkedFields);
 
     }
 

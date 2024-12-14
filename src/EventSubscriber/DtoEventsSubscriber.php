@@ -92,7 +92,7 @@ class DtoEventsSubscriber implements EventSubscriberInterface {
 
             $attribute = $attribute?->newInstance() ?? new DtoPayload();
 
-            if ($subjectRef = $attribute->subject) {
+            if ($subjectRef = $attribute->getSubject()) {
 
                 if (is_array($subjectRef)) {
                     foreach ($subjectRef as $refKey => $ref) {
@@ -103,7 +103,7 @@ class DtoEventsSubscriber implements EventSubscriberInterface {
                     $subject = $this->getDtoSubject($subjectRef, $request, $namedArguments);
                 }
 
-                $attribute->subject = $subject;
+                $attribute->setSubject($subject);
             }
 
             $this->validator->validate($dto, $attribute);
