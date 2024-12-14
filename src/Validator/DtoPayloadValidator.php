@@ -8,17 +8,20 @@ use Teoalboo\DtoValidator\Exception\DtoFieldValidationException;
 use Teoalboo\DtoValidator\Exception\DtoPayloadValidationException;
 use Ds\Map;
 use Psr\Container\ContainerInterface;
-use ReflectionClass;
-use stdClass;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 use Symfony\Component\Validator\Exception\UnexpectedValueException;
-use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Validator\Constraint;
+use Symfony\Component\Validator\Constraints\AbstractComparison;
 use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\NotNull;
 use Symfony\Component\Validator\Constraints\Type;
 use Symfony\Component\Validator\ConstraintValidator;
-use Symfony\Component\Validator\Validator\ContextualValidatorInterface;
+use Symfony\Component\Validator\ConstraintViolationListInterface;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Teoalboo\DtoValidator\BaseDto;
+
 use function Symfony\Component\String\s;
 
 class DtoPayloadValidator extends ConstraintValidator {
@@ -28,11 +31,11 @@ class DtoPayloadValidator extends ConstraintValidator {
         private RequestStack $request
     ) { }
 
-    public function validate(mixed $dto, Constraint $constraint) {
+    public function validate($dto, Constraint $constraint): void {
 
-        if (!is_object($dto)) {
+        if (!$dto instanceof BaseDto) {
 
-            throw new UnexpectedValueException($dto, 'object');
+            throw new UnexpectedValueException($dto, BaseDto::class);
         }
 
         if (!$constraint instanceof DtoPayload) {
@@ -40,157 +43,63 @@ class DtoPayloadValidator extends ConstraintValidator {
             throw new UnexpectedValueException($constraint, DtoPayload::class);
         }
 
-        //SECTION - Metodo non standard
-        $this->context->setNode($dto, $dto, $this->context->getMetadata(), $this->context->getPropertyPath());
+        $validator = $this->context->getValidator();
 
-        $context = $this->context->getValidator()->inContext($this->context);
-        // !SECTION
-
-        $constraint->content = $this->initConstraintContent($constraint);
-
-        $constraint->properties = $this->calcDtoProperties($constraint, $dto);
-
-        $this->checkValues($context, $constraint, $dto);
+        $this->checkValues($validator, $dto);
         
-        $this->checkDisabledProperties($context, $constraint, $dto);
+        $this->checkDisabledProperties($dto, $constraint);
         
-        $this->checkNullableProperties($context, $constraint, $dto);
+        $this->checkNullableProperties($validator, $dto, $constraint);
         
-        $this->checkRequiredFields($context, $constraint, $dto);
+        $this->checkRequiredFields($validator, $dto, $constraint);
 
-        $this->applyConstraints($context, $constraint, $dto);
+        $this->applyConstraints($validator, $dto);
 
-        $this->throwErrors($constraint);
-
+        $this->throwErrors($dto, $constraint);
+        
     }
 
-    private function initConstraintContent(DtoPayload $constraint): object {
+    private function throwErrors(BaseDto $dto, DtoPayload $constraint): void {
 
-        $content = $constraint->content ?? json_decode($this->request->getCurrentRequest()->getContent());
+        if($errors = $dto->getAllErrors()) {
 
-        return is_object($content) ? $content : new stdClass();
-    }
-
-    private function calcDtoProperties(DtoPayload $constraint, object $dto): array {
-
-        if($constraint->fields) {
-
-            return $constraint->fields;
+            throw new DtoPayloadValidationException($errors, $constraint->errorCode);
         }
 
-        $properties = [];
-
-        $reflection = new ReflectionClass($dto);
-
-        foreach ($reflection->getProperties() as $property) {
-
-            if(count($attributes = $property->getAttributes(DtoField::class))) {
-
-                [ $attribute ] = $attributes;
-
-                $properties[$property->getName()] = $attribute->newInstance();
-
-            }
-            
-        }
-
-        return $properties;
-
     }
 
-    private function checkValues(ContextualValidatorInterface $context, DtoPayload $constraint, object $dto) {
+    function checkValues(ValidatorInterface $validator, BaseDto $dto) {
         
-        foreach ($constraint->getEnabledParameters() as $property => $value) {
+        foreach ($dto->getEnabledParameters() as $property => $attribute) {
 
             try {
 
-                $attribute = $constraint->getPropertyAttribute($property);
+                $this->checkValueType($validator, $property, $attribute);
 
-                $this->checkValueType($context, $property, $value, $attribute);
+                if(is_null($attribute->getValue()) || is_null($attribute->resolver)) { 
 
-                if(is_null($value) || is_null($attribute->resolver)) { 
-
-                    $dto->$property = $value;
-                    
+                    continue;
                 } else {
-        
+
                     $resolver = $this->container->get($attribute->resolver->resolvedBy());
                     
-                    $dto->$property = $resolver->resolve($attribute->resolver, $property, $value);
-        
+                    $attribute->setValue($resolver->resolve($attribute->resolver, $property, $attribute->getValue()));
                 }
 
             } catch(DtoFieldValidationException $e) {
 
-                $constraint->addError($e);
+                $dto->addPropertyErrors($e);
 
             }
 
         }
 
-    }
-
-    private function checkValueType(ContextualValidatorInterface $context, string $property, mixed $value, DtoField $attribute): void {
-
-        if(in_array(DtoFieldType::ARRAY, $attribute->types)) {
-
-            $context
-                ->atPath($property)
-                ->validate($value, new Type(DtoFieldType::ARRAY->value))
-            ;
-
-            $this->checkViolations($context, $property);
-
-            $itemTypes = array_filter($attribute->types, fn($t) => $t != DtoFieldType::ARRAY);
-
-            foreach ($value as $arrayValue) {
-
-                $context
-                    ->atPath($property)
-                    ->validate($arrayValue, new Type(array_map(fn(DtoFieldType $t) => $t->value, $itemTypes)))
-                ;
-
-            }
-
-            $this->checkViolations($context, $property);
-
-        } else {
-
-            $context
-                ->atPath($property)
-                ->validate($value, new Type(array_map(fn(DtoFieldType $t) => $t->value, $attribute->types)))
-            ;
-
-            $this->checkViolations($context, $property);
-
-        }
-            
-    }
-
-    private function checkViolations(ContextualValidatorInterface $context, string $propertyName) {
-
-        if($context->getViolations()->count()) {
-
-            $violations = [];
-
-            foreach ($context->getViolations() as $index => $v) {
-
-                $violations[] = $v->getMessage();
-                
-                $context->getViolations()->remove($index);
-            }
-
-            throw new DtoFieldValidationException(
-                $propertyName, 
-                $violations
-            );
-        }
 
     }
 
-    private function checkDisabledProperties(ContextualValidatorInterface $context, DtoPayload $constraint, object $dto, array &$checkedFields = []): void {
+    function checkDisabledProperties(BaseDto $dto, DtoPayload $constraint, array &$checkedFields = []): void {
 
-        $currentCheck = array_filter($constraint->getEnabledProperties(includeErrorProperties: true), function($attribute, $propertyName) use (&$checkedFields) {
+        $currentCheck = array_filter($dto->getEnabledProperties(includeErrorProperties: true), function($attribute, $propertyName) use (&$checkedFields) {
 
             if(in_array($propertyName, array_keys($checkedFields))) {
 
@@ -210,10 +119,9 @@ class DtoPayloadValidator extends ConstraintValidator {
 
         foreach ($currentCheck as $propertyName => $attribute) {
 
-            if($this->evaluateBoolOrExpression($constraint, $attribute->disabled, $dto)) {
+            if($this->evaluateBoolOrExpression($attribute->disabled, $dto, $constraint)) {
 
-                // Viene disabilitata la proprietà stessa e tutte quelle che ne dipendono
-                $constraint->disableProperty($propertyName);
+                $dto->disableProperty($propertyName);
 
             } 
             
@@ -221,45 +129,42 @@ class DtoPayloadValidator extends ConstraintValidator {
 
         }
 
-        $this->checkDisabledProperties($context, $constraint, $dto, $checkedFields);
+        $this->checkDisabledProperties($dto, $constraint, $checkedFields);
 
     }
 
-    function checkNullableProperties(ContextualValidatorInterface $context, DtoPayload $constraint, object $dto) {
+    function checkNullableProperties(ValidatorInterface $validator, BaseDto $dto, DtoPayload $constraint) {
 
-        foreach (array_keys($constraint->getEnabledParameters()) as $property) {
+        foreach ($dto->getEnabledParameters() as $property => $attribute) {
 
             try {
 
-                $attribute = $constraint->getPropertyAttribute($property);
+                if(!$this->evaluateBoolOrExpression($attribute->nullable, $dto, $constraint)) {
 
-                if(!$this->evaluateBoolOrExpression($constraint, $attribute->nullable, $dto)) {
+                    $violations = $validator->validate($attribute->getValue(), new NotNull());
 
-                    $context->atPath($property)->validate($dto->$property, new NotNull());
-
-                    $this->checkViolations($context, $property);
+                    $this->checkViolations($violations, $property);
                 }
 
             } catch(DtoFieldValidationException $e) {
 
-                $constraint->addError($e);
+                $dto->addPropertyErrors($e);
 
             }
 
         }
 
-
     }
 
-    private function checkRequiredFields(ContextualValidatorInterface $context, DtoPayload $constraint, object $dto): void {
+    private function checkRequiredFields(ValidatorInterface $validator, BaseDto $dto, DtoPayload $constraint): void {
 
-        foreach ($constraint->getEnabledProperties() as $propertyName => $attribute) {
+        foreach ($dto->getEnabledProperties() as $propertyName => $attribute) {
 
             try {
 
-                if($this->evaluateBoolOrExpression($constraint, $attribute->required, $dto)) {
+                if($this->evaluateBoolOrExpression($attribute->required, $dto, $constraint)) {
 
-                    if(!in_array($propertyName, array_keys($constraint->getEnabledParameters()))) {
+                    if(!in_array($propertyName, array_keys($dto->getEnabledParameters()))) {
 
                         throw new DtoFieldValidationException(
                             $propertyName, 
@@ -267,15 +172,15 @@ class DtoPayloadValidator extends ConstraintValidator {
                         );
                     }
             
-                    $context->atPath($propertyName)->validate($dto->$propertyName, new NotBlank(allowNull: true));
+                    $violations = $validator->validate($attribute->getValue(), new NotBlank(allowNull: true));
             
-                    $this->checkViolations($context, $propertyName);
+                    $this->checkViolations($violations, $propertyName);
 
                 }
 
             } catch(DtoFieldValidationException $e) {
                 
-                $constraint->addError($e);
+                $dto->addPropertyErrors($e);
 
             }
 
@@ -283,15 +188,75 @@ class DtoPayloadValidator extends ConstraintValidator {
 
     }
 
-    private function evaluateBoolOrExpression(DtoPayload $constraint, string | bool $value, object $dto): bool {
+    private function applyConstraints(ValidatorInterface $validator, BaseDto $dto) {
+        
+        foreach ($dto->getEnabledParameters() as $property => $attribute) {
+
+            try {
+
+                $constraints = array_map(function($c) use ($dto) {
+
+                    if($c instanceof AbstractComparison && !!($path = $c->propertyPath)) {
+
+                        $c->propertyPath = null;
+
+                        $c->value = $dto->$path->getValue();
+                    }
+
+                    return $c;
+
+                }, $attribute->constraints);
+
+                $violations = $validator->validate($attribute->getValue(), $constraints);
+
+                $this->checkViolations($violations, $property);
+
+            } catch(DtoFieldValidationException $e) {
+    
+                $dto->addPropertyErrors($e);
+
+            }
+
+        }
+    }
+
+    private function checkValueType(ValidatorInterface $validator, string $property, DtoField $attribute): void {
+
+        if(in_array(DtoFieldType::ARRAY, $attribute->types)) {
+
+            $violations = $validator->validate($attribute->getValue(), new Type(DtoFieldType::ARRAY->value));
+
+            $this->checkViolations($violations, $property);
+
+            $itemTypes = array_filter($attribute->types, fn($t) => $t != DtoFieldType::ARRAY);
+
+            foreach ($attribute->getValue() as $arrayValue) {
+
+                $violations->addAll($validator->validate($arrayValue, new Type(array_map(fn(DtoFieldType $t) => $t->value, $itemTypes))));
+
+            }
+
+            $this->checkViolations($violations, $property);
+
+        } else {
+
+            $violations = $validator->validate($attribute->getValue(), new Type(array_map(fn(DtoFieldType $t) => $t->value, $attribute->types)));
+
+            $this->checkViolations($violations, $property);
+
+        }
+            
+    }
+
+    private function evaluateBoolOrExpression(string | bool $value, BaseDto $dto, DtoPayload $constraint): bool {
 
         if(is_string($value)) {
 
             $expression = new ExpressionLanguage();
 
-            $payload = new Map($constraint->getPropertiesValues($dto));
+            $payload = new Map($dto->getParametersValues());
 
-            $subject = is_object($constraint->subject) ? $constraint->subject : null;
+            $subject = $constraint->subject;
 
             $onUpdate = !!$subject ? true  : false;
 
@@ -338,36 +303,22 @@ class DtoPayloadValidator extends ConstraintValidator {
 
     }
 
-    private function applyConstraints(ContextualValidatorInterface $context, DtoPayload $constraint, object $dto) {
-        
-        foreach (array_keys($constraint->getEnabledParameters()) as $property) {
+    private function checkViolations(ConstraintViolationListInterface $violations, string $propertyName) {
 
-            try {
+        if($violations->count()) {
 
-                $attribute = $constraint->getPropertyAttribute($property);
+            $messages = [];
+
+            foreach ($violations as $v) {
+
+                $messages[] = $v->getMessage();
                 
-                $context
-                    ->atPath($property)
-                    ->validate($dto->$property, $attribute->constraints)
-                ;
-
-                $this->checkViolations($context, $property);
-
-            } catch(DtoFieldValidationException $e) {
-    
-                $constraint->addError($e);
-
             }
 
-        }
-
-    }
-
-    private function throwErrors(DtoPayload $constraint): void {
-
-        if($errors = $constraint->getPayloadErrors()) {
-
-            throw new DtoPayloadValidationException($errors, $constraint->errorCode);
+            throw new DtoFieldValidationException(
+                $propertyName, 
+                $messages
+            );
         }
 
     }

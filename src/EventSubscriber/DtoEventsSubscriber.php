@@ -6,20 +6,33 @@ use Teoalboo\DtoValidator\Exception\DtoFieldValidationException;
 use Teoalboo\DtoValidator\Exception\DtoPayloadValidationException;
 use Teoalboo\DtoValidator\Validator\DtoPayload;
 use ReflectionClass;
+use RuntimeException;
+use stdClass;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\Event\ControllerArgumentsEvent;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\Translation\Translator;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Teoalboo\DtoValidator\BaseDto;
+use Symfony\Component\ExpressionLanguage\Expression;
+use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
+use Symfony\Component\HttpFoundation\Request;
 
 class DtoEventsSubscriber implements EventSubscriberInterface {
 
+    private ExpressionLanguage $expression;
+
     public function __construct(
+        private RequestStack $stack,
         private Translator $translator,
         private ValidatorInterface $validator
-    ) { }
+    ) { 
+
+        $this->expression = new ExpressionLanguage();
+    }
 
     public function onKernelException(ExceptionEvent $event): void {
         
@@ -75,38 +88,66 @@ class DtoEventsSubscriber implements EventSubscriberInterface {
 
     public function onKernelControllerArguments(ControllerArgumentsEvent $event): void {
 
-        $arguments = array_filter($event->getNamedArguments(), fn($v) => is_object($v));
+        $request = $this->stack->getCurrentRequest();
 
-        foreach ($arguments as $argument) {
+        $arguments = $event->getNamedArguments();
+
+        $dtos = array_filter($arguments, fn($v) => is_object($v) && $v instanceof BaseDto);
+
+        foreach ($dtos as $dto) {
+
+            $decode = json_decode($request->getContent());
+
+            $dto->setContent(is_object($decode) ? $decode : new stdClass());
             
-            $reflection = new ReflectionClass($argument);
+            $reflection = new ReflectionClass($dto);
 
-            [ $payload ] = $reflection->getAttributes(DtoPayload::class) + [ null ];
+            [ $attribute ] = $reflection->getAttributes(DtoPayload::class) + [ null ];
 
-            if($payload = $payload?->newInstance()) {
+            $attribute = $attribute?->newInstance() ?? new DtoPayload();
 
-                $subject = null;
+            if ($subjectRef = $attribute->subject) {
 
-                if($payload->subject) {
-                    
-                    [ $payload->subject => $subject ] = $event->getNamedArguments() + [ $payload->subject => null ];
+                if (is_array($subjectRef)) {
+                    foreach ($subjectRef as $refKey => $ref) {
 
+                        $subject[$refKey] = $this->getDtoSubject($ref, $request, $arguments);
+                    }
+                } else {
+                    $subject = $this->getDtoSubject($subjectRef, $request, $arguments);
                 }
 
-                $this->validator->validate($argument, new DtoPayload(
-                    errorCode: $payload->errorCode, 
-                    content:   $payload->content, 
-                    fields:    $payload->fields, 
-                    subject:   $subject
-                ));
+                $attribute->subject = $subject;
             }
+
+            $this->validator->validate($dto, $attribute);
 
         }
         
     }
 
-    public static function getSubscribedEvents(): array
-    {
+    public function getDtoSubject(string|Expression $subjectRef, Request $request, array $arguments): mixed {
+
+        if ($subjectRef instanceof Expression) {
+
+            $this->expression ??= new ExpressionLanguage();
+
+            return $this->expression->evaluate($subjectRef, [
+                'request' => $request,
+                'args' => $arguments,
+            ]);
+        }
+
+        if (!\array_key_exists($subjectRef, $arguments)) {
+
+            throw new RuntimeException(\sprintf('Could not find the subject "%s".', $subjectRef));
+        }
+
+        return $arguments[$subjectRef];
+    }
+
+    public static function getSubscribedEvents(): array {
+        
         return [
             KernelEvents::EXCEPTION            => 'onKernelException',
             KernelEvents::CONTROLLER_ARGUMENTS => 'onKernelControllerArguments'

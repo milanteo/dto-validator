@@ -11,7 +11,18 @@
 	// "features": {},
 
 	// Configure tool-specific properties.
-	// "customizations": {},
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"bmewburn.vscode-intelephense-client",
+				"eamodio.gitlens",
+				"donjayamanne.githistory",
+				"ms-azuretools.vscode-docker",
+				"exodiusstudios.comment-anchors"
+			]
+		}
+	}
+
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [8080]
