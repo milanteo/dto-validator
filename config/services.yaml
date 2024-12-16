@@ -8,10 +8,10 @@ services:
     public: true
     resource: '../src/Resolver/*Resolver.php'
 
-  Teoalboo\DtoValidator\Validator\DtoPayloadValidator:
+  Teoalboo\DtoValidator\Service\DtoValidatorService:
     arguments: 
       $container: '@service_container'
-      $request:   '@request_stack'
+      $validator: '@validator'
 
   Teoalboo\DtoValidator\Validator\NotExistValidator:
     arguments: 
@@ -19,6 +19,7 @@ services:
 
   Teoalboo\DtoValidator\EventSubscriber\DtoEventsSubscriber:
     arguments: 
+      $stack:      '@request_stack'
       $translator: '@translator'
-      $validator:  '@validator'
+      $validator:  'Teoalboo\DtoValidator\Service\DtoValidatorService'
     tags: ['kernel.event_subscriber']

@@ -1,79 +1,65 @@
 <?php
 
-namespace Teoalboo\DtoValidator\Validator;
+namespace Teoalboo\DtoValidator\Service;
 
-use Teoalboo\DtoValidator\DtoField;
-use Teoalboo\DtoValidator\DtoFieldType;
-use Teoalboo\DtoValidator\Exception\DtoFieldValidationException;
-use Teoalboo\DtoValidator\Exception\DtoPayloadValidationException;
 use Ds\Map;
+use Teoalboo\DtoValidator\Exception\DtoFieldValidationException;
 use Psr\Container\ContainerInterface;
-use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
-use Symfony\Component\Validator\Exception\UnexpectedValueException;
-use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\Constraints\AbstractComparison;
 use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\NotNull;
 use Symfony\Component\Validator\Constraints\Type;
-use Symfony\Component\Validator\ConstraintValidator;
 use Symfony\Component\Validator\ConstraintViolationListInterface;
+use Teoalboo\DtoValidator\Attribute\DtoField;
+use Teoalboo\DtoValidator\DtoFieldType;
+use Symfony\Component\Validator\Exception\UnexpectedValueException;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Teoalboo\DtoValidator\Attribute\DtoPayload;
 use Teoalboo\DtoValidator\BaseDto;
+use Teoalboo\DtoValidator\Exception\DtoPayloadValidationException;
 
 use function Symfony\Component\String\s;
 
-class DtoPayloadValidator extends ConstraintValidator {
+class DtoValidatorService {
 
     public function __construct(
         private ContainerInterface $container,
-        private RequestStack $request
+        private ValidatorInterface $validator
     ) { }
 
-    public function validate($dto, Constraint $constraint): void {
+    public function validate(BaseDto $dto, DtoPayload $attribute): void {
 
-        if (!$dto instanceof BaseDto) {
-
-            throw new UnexpectedValueException($dto, BaseDto::class);
-        }
-
-        if (!$constraint instanceof DtoPayload) {
-
-            throw new UnexpectedValueException($constraint, DtoPayload::class);
-        }
-
-        $validator = $this->context->getValidator();
-
-        $this->checkValues($validator, $dto);
+        $this->checkValues($dto, $attribute);
         
-        $this->checkDisabledProperties($validator, $dto, $constraint);
+        $this->checkDisabledProperties($dto, $attribute);
         
-        $this->checkNullableProperties($validator, $dto, $constraint);
+        $this->checkNullableProperties($dto, $attribute);
         
-        $this->checkRequiredFields($validator, $dto, $constraint);
+        $this->checkRequiredFields($dto, $attribute);
 
-        $this->applyConstraints($validator, $dto);
+        $this->applyConstraints($dto, $attribute);
 
-        $this->throwErrors($dto, $constraint);
-        
+        $this->throwErrors($dto, $attribute);
+
     }
 
     private function throwErrors(BaseDto $dto, DtoPayload $constraint): void {
 
         if($errors = $dto->getAllErrors()) {
 
-            throw new DtoPayloadValidationException($errors, $constraint->errorCode);
+            throw new DtoPayloadValidationException($errors, $constraint->getErrorCode());
         }
 
     }
 
-    function checkValues(ValidatorInterface $validator, BaseDto $dto) {
+    function checkValues(BaseDto $dto, DtoPayload $constraint): void {
         
         foreach ($dto->getEnabledParameters() as $property => $attribute) {
 
             try {
 
-                $this->checkValueType($validator, $property, $attribute);
+                $this->checkValueType($property, $attribute);
 
                 if(is_null($attribute->getValue()) || is_null($attribute->resolver)) { 
 
@@ -96,7 +82,7 @@ class DtoPayloadValidator extends ConstraintValidator {
 
     }
 
-    function checkDisabledProperties(ValidatorInterface $validator, BaseDto $dto, DtoPayload $constraint, array &$checkedFields = []): void {
+    function checkDisabledProperties(BaseDto $dto, DtoPayload $constraint, array &$checkedFields = []): void {
 
         $currentCheck = array_filter($dto->getEnabledProperties(includeErrorProperties: true), function($attribute, $propertyName) use (&$checkedFields) {
 
@@ -128,11 +114,11 @@ class DtoPayloadValidator extends ConstraintValidator {
 
         }
 
-        $this->checkDisabledProperties($validator, $dto, $constraint, $checkedFields);
+        $this->checkDisabledProperties($dto, $constraint, $checkedFields);
 
     }
 
-    function checkNullableProperties(ValidatorInterface $validator, BaseDto $dto, DtoPayload $constraint) {
+    function checkNullableProperties(BaseDto $dto, DtoPayload $constraint) {
 
         foreach ($dto->getEnabledParameters() as $property => $attribute) {
 
@@ -140,7 +126,7 @@ class DtoPayloadValidator extends ConstraintValidator {
 
                 if(!$this->evaluateBoolOrExpression($attribute->nullable, $dto, $constraint)) {
 
-                    $violations = $validator->validate($attribute->getValue(), new NotNull());
+                    $violations = $this->validator->validate($attribute->getValue(), new NotNull());
 
                     $this->checkViolations($violations, $property);
                 }
@@ -155,7 +141,7 @@ class DtoPayloadValidator extends ConstraintValidator {
 
     }
 
-    private function checkRequiredFields(ValidatorInterface $validator, BaseDto $dto, DtoPayload $constraint): void {
+    private function checkRequiredFields(BaseDto $dto, DtoPayload $constraint): void {
 
         foreach ($dto->getEnabledProperties() as $propertyName => $attribute) {
 
@@ -171,7 +157,7 @@ class DtoPayloadValidator extends ConstraintValidator {
                         );
                     }
             
-                    $violations = $validator->validate($attribute->getValue(), new NotBlank(allowNull: true));
+                    $violations = $this->validator->validate($attribute->getValue(), new NotBlank(allowNull: true));
             
                     $this->checkViolations($violations, $propertyName);
 
@@ -187,7 +173,7 @@ class DtoPayloadValidator extends ConstraintValidator {
 
     }
 
-    private function applyConstraints(ValidatorInterface $validator, BaseDto $dto) {
+    private function applyConstraints(BaseDto $dto, DtoPayload $constraint): void {
         
         foreach ($dto->getEnabledParameters() as $property => $attribute) {
 
@@ -206,7 +192,7 @@ class DtoPayloadValidator extends ConstraintValidator {
 
                 }, $attribute->constraints);
 
-                $violations = $validator->validate($attribute->getValue(), $constraints);
+                $violations = $this->validator->validate($attribute->getValue(), $constraints);
 
                 $this->checkViolations($violations, $property);
 
@@ -219,11 +205,11 @@ class DtoPayloadValidator extends ConstraintValidator {
         }
     }
 
-    private function checkValueType(ValidatorInterface $validator, string $property, DtoField $attribute): void {
+    private function checkValueType(string $property, DtoField $attribute): void {
 
         if(in_array(DtoFieldType::ARRAY, $attribute->types)) {
 
-            $violations = $validator->validate($attribute->getValue(), new Type(DtoFieldType::ARRAY->value));
+            $violations = $this->validator->validate($attribute->getValue(), new Type(DtoFieldType::ARRAY->value));
 
             $this->checkViolations($violations, $property);
 
@@ -231,7 +217,7 @@ class DtoPayloadValidator extends ConstraintValidator {
 
             foreach ($attribute->getValue() as $arrayValue) {
 
-                $violations->addAll($validator->validate($arrayValue, new Type(array_map(fn(DtoFieldType $t) => $t->value, $itemTypes))));
+                $violations->addAll($this->validator->validate($arrayValue, new Type(array_map(fn(DtoFieldType $t) => $t->value, $itemTypes))));
 
             }
 
@@ -239,7 +225,7 @@ class DtoPayloadValidator extends ConstraintValidator {
 
         } else {
 
-            $violations = $validator->validate($attribute->getValue(), new Type(array_map(fn(DtoFieldType $t) => $t->value, $attribute->types)));
+            $violations = $this->validator->validate($attribute->getValue(), new Type(array_map(fn(DtoFieldType $t) => $t->value, $attribute->types)));
 
             $this->checkViolations($violations, $property);
 
@@ -321,5 +307,6 @@ class DtoPayloadValidator extends ConstraintValidator {
         }
 
     }
+
 
 }

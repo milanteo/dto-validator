@@ -1,27 +1,28 @@
 <?php
 
-namespace Teoalboo\DtoValidator\Validator;
+namespace Teoalboo\DtoValidator\Attribute;
 
 use Attribute;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Validator\Attribute\HasNamedArguments;
-use Symfony\Component\Validator\Constraint;
 use Symfony\Component\ExpressionLanguage\Expression;
 
-#[Attribute()]
-class DtoPayload extends Constraint {
+#[Attribute(Attribute::TARGET_PARAMETER)]
+class DtoPayload {
 
     private mixed $subject = null;
 
-    #[HasNamedArguments]
     public function __construct(
-        public int   $errorCode = Response::HTTP_BAD_REQUEST,
-        array|string|Expression|null $subject = null
+        private int   $errorCode = Response::HTTP_BAD_REQUEST,
+        array | string | Expression | null $subject = null
     ) {
 
         $this->subject = $subject;
 
-        parent::__construct([], null, null);
+    }
+
+    public function getErrorCode(): int {
+
+        return $this->errorCode;
     }
 
     public function setSubject(mixed $subject): self {

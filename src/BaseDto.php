@@ -6,6 +6,7 @@ use AllowDynamicProperties;
 use Ds\Map;
 use ReflectionClass;
 use stdClass;
+use Teoalboo\DtoValidator\Attribute\DtoField;
 use Teoalboo\DtoValidator\Exception\DtoFieldValidationException;
 
 #[AllowDynamicProperties]

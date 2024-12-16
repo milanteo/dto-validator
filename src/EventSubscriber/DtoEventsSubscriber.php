@@ -3,7 +3,7 @@
 namespace Teoalboo\DtoValidator\EventSubscriber;
 
 use Teoalboo\DtoValidator\Exception\DtoPayloadValidationException;
-use Teoalboo\DtoValidator\Validator\DtoPayload;
+use Teoalboo\DtoValidator\Attribute\DtoPayload;
 use ReflectionFunction;
 use RuntimeException;
 use stdClass;
@@ -14,11 +14,11 @@ use Symfony\Component\HttpKernel\Event\ControllerArgumentsEvent;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\Translation\Translator;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Teoalboo\DtoValidator\BaseDto;
 use Symfony\Component\ExpressionLanguage\Expression;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 use Symfony\Component\HttpFoundation\Request;
+use Teoalboo\DtoValidator\Service\DtoValidatorService;
 
 class DtoEventsSubscriber implements EventSubscriberInterface {
 
@@ -27,10 +27,18 @@ class DtoEventsSubscriber implements EventSubscriberInterface {
     public function __construct(
         private RequestStack $stack,
         private Translator $translator,
-        private ValidatorInterface $validator
+        private DtoValidatorService $validator
     ) { 
 
         $this->expression = new ExpressionLanguage();
+    }
+
+    public static function getSubscribedEvents(): array {
+        
+        return [
+            KernelEvents::EXCEPTION            => 'onKernelException',
+            KernelEvents::CONTROLLER_ARGUMENTS => 'onKernelControllerArguments'
+        ];
     }
 
     public function onKernelException(ExceptionEvent $event): void {
@@ -132,11 +140,6 @@ class DtoEventsSubscriber implements EventSubscriberInterface {
         return $arguments[$subjectRef];
     }
 
-    public static function getSubscribedEvents(): array {
-        
-        return [
-            KernelEvents::EXCEPTION            => 'onKernelException',
-            KernelEvents::CONTROLLER_ARGUMENTS => 'onKernelControllerArguments'
-        ];
-    }
+    
+
 }

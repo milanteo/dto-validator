@@ -4,14 +4,14 @@ namespace Teoalboo\DtoValidator\Resolver;
 
 use Teoalboo\DtoValidator\Exception\DtoPayloadValidationException;
 use Teoalboo\DtoValidator\Resolver\NestedDto;
-use Teoalboo\DtoValidator\Validator\DtoPayload;
-use stdClass;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Teoalboo\DtoValidator\Attribute\DtoPayload;
+use Teoalboo\DtoValidator\BaseDto;
+use Teoalboo\DtoValidator\Service\DtoValidatorService;
 
 class NestedDtoResolver extends DtoResolver {
 
     public function __construct(
-        private ValidatorInterface $validator
+        private DtoValidatorService $validator
     ) { }
 
     public function resolve(mixed $resolver, string $propertyName, mixed $dtoValue): mixed {
@@ -64,20 +64,15 @@ class NestedDtoResolver extends DtoResolver {
 
         if(is_array($resolver->config)) {
 
-            $child = new stdClass();
+            $child = new BaseDto(properties: $resolver->config, content: $value);
 
-            foreach (array_keys($resolver->config) as $key) {
-                
-                $child->$key = null;
-            }
-
-            $this->validator->validate($child, new DtoPayload(content: $value, fields: $resolver->config));
+            $this->validator->validate($child, new DtoPayload());
 
         } else {
 
-            $child = new $resolver->config();
+            $child = new $resolver->config(content: $value);
             
-            $this->validator->validate($child, new DtoPayload(content: $value));
+            $this->validator->validate($child, new DtoPayload());
 
         }
 

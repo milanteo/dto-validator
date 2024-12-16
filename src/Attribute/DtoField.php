@@ -1,5 +1,5 @@
 <?php
-namespace Teoalboo\DtoValidator;
+namespace Teoalboo\DtoValidator\Attribute;
 
 use Attribute;
 use Teoalboo\DtoValidator\Resolver\DtoResolverInterface;
