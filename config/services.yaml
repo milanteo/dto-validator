@@ -21,5 +21,5 @@ services:
     arguments: 
       $stack:      '@request_stack'
       $translator: '@translator'
-      $validator:  'Teoalboo\DtoValidator\Service\DtoValidatorService'
+      $validator:  '@Teoalboo\DtoValidator\Service\DtoValidatorService'
     tags: ['kernel.event_subscriber']
