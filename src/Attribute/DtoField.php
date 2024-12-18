@@ -15,6 +15,8 @@ class DtoField {
 
     private mixed $value = null;
 
+    private mixed $rawValue = null;
+
     public function __construct(
         public array $types,
         public ?DtoResolverInterface $resolver = null,
@@ -44,19 +46,31 @@ class DtoField {
         return $this;
     }
 
-    public function getValue(): mixed {
-
-        return $this->value;
-    }
-
     public function isInitialized(): bool {
 
         return $this->initialized;
     }
 
-    public function setValue(mixed $value): self {
+    public function getRawValue(): mixed {
+
+        return $this->rawValue;
+    }
+
+    public function setRawValue(mixed $rawValue): self {
 
         $this->initialized = true;
+
+        $this->rawValue = $rawValue;
+
+        return $this;
+    }
+
+    public function getValue(): mixed {
+
+        return $this->value;
+    }
+
+    public function setValue(mixed $value): self {
 
         $this->value = $value;
 

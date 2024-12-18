@@ -23,12 +23,17 @@ class BaseDto {
         
     }
 
-    public function getParametersValues(): array {
+    public function getValues(): Map {
 
-        return array_map(fn(DtoField $v) => $v->getValue(), $this->getEnabledParameters());
+        return new Map(array_map(fn(DtoField $v) => $v->getValue(), $this->getInitializedProperties()));
     }
 
-    public function getEnabledParameters(bool $includeErrorProperties = false): array {
+    public function getRawValues(): Map {
+
+        return new Map(array_map(fn(DtoField $v) => $v->getRawValue(), $this->getInitializedProperties()));
+    }
+
+    public function getInitializedProperties(bool $includeErrorProperties = false): array {
 
         return array_filter($this->getEnabledProperties($includeErrorProperties), fn(DtoField $v) => $v->isInitialized());
     }
@@ -55,12 +60,6 @@ class BaseDto {
         }
 
         return $this;
-    }
-
-    public function getPayload(): Map {
-
-        return new Map($this->getParametersValues());
-
     }
 
     public function addPropertyErrors(DtoFieldValidationException $e): self {
@@ -101,7 +100,7 @@ class BaseDto {
 
             if(property_exists($content, $propertyName)) {
 
-                $propertyAttribute->setValue($content->$propertyName);
+                $propertyAttribute->setRawValue($content->$propertyName);
             }
             
         }

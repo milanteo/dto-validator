@@ -55,20 +55,20 @@ class DtoValidatorService {
 
     function checkValues(BaseDto $dto, DtoPayload $constraint): void {
         
-        foreach ($dto->getEnabledParameters() as $property => $attribute) {
+        foreach ($dto->getInitializedProperties() as $property => $attribute) {
 
             try {
 
                 $this->checkValueType($property, $attribute);
 
-                if(is_null($attribute->getValue()) || is_null($attribute->resolver)) { 
+                if(is_null($attribute->getRawValue()) || is_null($attribute->resolver)) { 
 
-                    continue;
+                    $attribute->setValue($attribute->getRawValue());
                 } else {
 
                     $resolver = $this->container->get($attribute->resolver->resolvedBy());
                     
-                    $attribute->setValue($resolver->resolve($attribute->resolver, $property, $attribute->getValue()));
+                    $attribute->setValue($resolver->resolve($attribute->resolver, $property, $attribute->getRawValue()));
                 }
 
             } catch(DtoFieldValidationException $e) {
@@ -120,7 +120,7 @@ class DtoValidatorService {
 
     function checkNullableProperties(BaseDto $dto, DtoPayload $constraint) {
 
-        foreach ($dto->getEnabledParameters() as $property => $attribute) {
+        foreach ($dto->getInitializedProperties() as $property => $attribute) {
 
             try {
 
@@ -149,7 +149,7 @@ class DtoValidatorService {
 
                 if($this->evaluateBoolOrExpression($attribute->required, $dto, $constraint)) {
 
-                    if(!in_array($propertyName, array_keys($dto->getEnabledParameters()))) {
+                    if(!$attribute->isInitialized()) {
 
                         throw new DtoFieldValidationException(
                             $propertyName, 
@@ -175,7 +175,7 @@ class DtoValidatorService {
 
     private function applyConstraints(BaseDto $dto, DtoPayload $constraint): void {
         
-        foreach ($dto->getEnabledParameters() as $property => $attribute) {
+        foreach ($dto->getInitializedProperties() as $property => $attribute) {
 
             try {
 
@@ -239,7 +239,7 @@ class DtoValidatorService {
 
             $expression = new ExpressionLanguage();
 
-            $payload = new Map($dto->getParametersValues());
+            $payload = $dto->getValues();
 
             $subject = $constraint->getSubject();
 
