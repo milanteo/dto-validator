@@ -4,12 +4,9 @@ namespace Teoalboo\DtoValidator\Resolver;
 
 use Teoalboo\DtoValidator\Exception\DtoFieldValidationException;
 
-class DtoResolver {
+abstract class DtoResolver {
 
-    public function resolve(mixed $resolver, string $propertyName, mixed $dtoValue): mixed {
-
-        return $dtoValue;
-    }
+    abstract public function resolve(mixed $resolver, string $propertyName, mixed $dtoValue): mixed;
 
     public function throwError(string $propertyName, string | array $errors): void {
 

@@ -58,16 +58,16 @@ class DtoValidatorService {
 
             try {
 
-                $this->checkValueType($property, $attribute);
+                $rawValue = $this->checkRawValueType($property, $attribute);
 
-                if(is_null($attribute->getRawValue()) || is_null($attribute->resolver)) { 
+                if(is_null($rawValue) || is_null($attribute->resolver)) { 
 
-                    $attribute->setValue($attribute->getRawValue());
+                    $attribute->setValue($rawValue);
                 } else {
 
                     $resolver = $this->container->get($attribute->resolver->resolvedBy());
                     
-                    $attribute->setValue($resolver->resolve($attribute->resolver, $property, $attribute->getRawValue()));
+                    $attribute->setValue($resolver->resolve($attribute->resolver, $property, $rawValue));
                 }
 
             } catch(DtoFieldValidationException $e) {
@@ -204,29 +204,37 @@ class DtoValidatorService {
         }
     }
 
-    private function checkValueType(string $property, DtoField $attribute): void {
+    private function checkRawValueType(string $property, DtoField $attribute): mixed {
 
         if(in_array(DtoFieldType::ARRAY, $attribute->types)) {
 
-            $violations = $this->validator->validate($attribute->getValue(), new Type(DtoFieldType::ARRAY->value));
+            $values = $attribute->getRawValue();
+
+            $violations = $this->validator->validate($values, new Type(DtoFieldType::ARRAY->value));
 
             $this->checkViolations($violations, $property);
 
             $itemTypes = array_filter($attribute->types, fn($t) => $t != DtoFieldType::ARRAY);
 
-            foreach ($attribute->getValue() as $arrayValue) {
+            foreach ($values as $item) {
 
-                $violations->addAll($this->validator->validate($arrayValue, new Type(array_map(fn(DtoFieldType $t) => $t->value, $itemTypes))));
+                $violations->addAll($this->validator->validate($item, new Type(array_map(fn(DtoFieldType $t) => $t->value, $itemTypes))));
 
             }
 
             $this->checkViolations($violations, $property);
 
+            return $values;
+
         } else {
 
-            $violations = $this->validator->validate($attribute->getValue(), new Type(array_map(fn(DtoFieldType $t) => $t->value, $attribute->types)));
+            $value = $attribute->getRawValue();
+
+            $violations = $this->validator->validate($value, new Type(array_map(fn(DtoFieldType $t) => $t->value, $attribute->types)));
 
             $this->checkViolations($violations, $property);
+
+            return $value;
 
         }
             
