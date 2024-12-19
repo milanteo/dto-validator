@@ -13,13 +13,13 @@ services:
       $container: '@service_container'
       $validator: '@validator'
 
-  Teoalboo\DtoValidator\Validator\NotExistValidator:
-    arguments: 
-      $em: '@doctrine.orm.entity_manager'
+  dto_validator: '@Teoalboo\DtoValidator\Service\DtoValidatorService'
 
   Teoalboo\DtoValidator\EventSubscriber\DtoEventsSubscriber:
     arguments: 
       $stack:      '@request_stack'
       $translator: '@translator'
-      $validator:  '@Teoalboo\DtoValidator\Service\DtoValidatorService'
+      $validator:  '@dto_validator'
     tags: ['kernel.event_subscriber']
+
+  dto_subscriber: '@Teoalboo\DtoValidator\EventSubscriber\DtoEventsSubscriber'

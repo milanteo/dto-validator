@@ -2,7 +2,6 @@
 
 namespace Teoalboo\DtoValidator\Service;
 
-use Ds\Map;
 use Teoalboo\DtoValidator\Exception\DtoFieldValidationException;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
