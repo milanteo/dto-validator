@@ -64,6 +64,8 @@ class DtoValidatorService {
 
         $this->throwErrors($dto, $attribute);
 
+        return $dto;
+
     }
 
     private function throwErrors(BaseDto $dto, DtoPayload $constraint): void {
