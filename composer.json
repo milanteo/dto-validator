@@ -2,7 +2,7 @@
     "name": "teoalboo/dto-validator",
     "description": "Rest api's dtos made simple",
     "type": "library",
-    "version": "dev-main",
+    "version": "main",
     "source": {
         "url": "git://github.com/milanteo/dto-validator.git",
         "type": "git",
