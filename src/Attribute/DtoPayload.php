@@ -12,8 +12,8 @@ class DtoPayload {
     private mixed $subject = null;
 
     public function __construct(
-        private int   $errorCode = Response::HTTP_BAD_REQUEST,
-        array | string | Expression | null $subject = null
+        private int $errorCode = Response::HTTP_BAD_REQUEST,
+        mixed $subject = null
     ) {
 
         $this->subject = $subject;
