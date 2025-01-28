@@ -17,6 +17,7 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Teoalboo\DtoValidator\Attribute\DtoPayload;
 use Teoalboo\DtoValidator\BaseDto;
 use Teoalboo\DtoValidator\Exception\DtoPayloadValidationException;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 use function Symfony\Component\String\s;
 
@@ -24,8 +25,24 @@ class DtoValidatorService {
 
     public function __construct(
         private ContainerInterface $container,
-        private ValidatorInterface $validator
+        private ValidatorInterface $validator,
+        private RequestStack $stack
     ) { }
+
+    /**
+     * @template T
+     * @param  T $dto
+     * @return T
+     */
+    public function populate(BaseDto $dto): mixed {
+
+        $decode = json_decode($this->stack->getCurrentRequest()->getContent());
+
+        $dto->setContent(is_object($decode) ? $decode : new stdClass());
+
+        return $dto;
+
+    }
 
     public function validate(BaseDto $dto, DtoPayload $attribute): void {
 

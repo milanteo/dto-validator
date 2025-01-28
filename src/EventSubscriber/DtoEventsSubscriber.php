@@ -92,9 +92,7 @@ class DtoEventsSubscriber implements EventSubscriberInterface {
 
             [ $dtoParam->getName() => $dto ] = $namedArguments;
 
-            $decode = json_decode($request->getContent());
-
-            $dto->setContent(is_object($decode) ? $decode : new stdClass());
+            $dto = $this->validator->populate($dto);
             
             [ $attribute ] = $dtoParam->getAttributes(DtoPayload::class) + [ null ];
 
