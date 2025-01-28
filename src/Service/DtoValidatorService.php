@@ -34,7 +34,7 @@ class DtoValidatorService {
      * @param  T $dto
      * @return T
      */
-    public function populate(BaseDto $dto): mixed {
+    public function populate(BaseDto $dto): BaseDto {
 
         $decode = json_decode($this->stack->getCurrentRequest()->getContent());
 
@@ -44,7 +44,13 @@ class DtoValidatorService {
 
     }
 
-    public function validate(BaseDto $dto, DtoPayload $attribute): void {
+    /**
+     * @template T
+     * @param  T $dto
+     * @param  DtoPayload $attribute
+     * @return T
+     */
+    public function validate(BaseDto $dto, DtoPayload $attribute): BaseDto {
 
         $this->checkValues($dto, $attribute);
         
