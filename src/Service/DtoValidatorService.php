@@ -18,7 +18,7 @@ use Teoalboo\DtoValidator\Attribute\DtoPayload;
 use Teoalboo\DtoValidator\BaseDto;
 use Teoalboo\DtoValidator\Exception\DtoPayloadValidationException;
 use Symfony\Component\HttpFoundation\RequestStack;
-
+use stdClass;
 use function Symfony\Component\String\s;
 
 class DtoValidatorService {
