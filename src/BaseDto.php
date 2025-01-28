@@ -129,7 +129,7 @@ class BaseDto {
 
     }
 
-    public function additionalExpressionContext(): array {
+    public function additionalExpressionContext(array $context): array {
 
         return [];
     }

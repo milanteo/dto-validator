@@ -335,12 +335,16 @@ class DtoValidatorService {
             
             });
 
-            return $expression->evaluate($value, [ 
+            $context = [ 
                 'onCreate' => $onCreate,
                 'onUpdate' => $onUpdate,
                 'subject'  => $subject,
-                'payload'  => $payload,
-                ...$dto->additionalExpressionContext()
+                'payload'  => $payload
+            ];
+
+            return $expression->evaluate($value, [ 
+                ...$context,
+                ...$dto->additionalExpressionContext($context)
             ]);
 
         }
