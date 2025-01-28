@@ -13,7 +13,7 @@ use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\Event\ControllerArgumentsEvent;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
-use Symfony\Component\Translation\Translator;
+use Symfony\Contracts\Translation\TranslatorInterface;
 use Teoalboo\DtoValidator\BaseDto;
 use Symfony\Component\ExpressionLanguage\Expression;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
@@ -26,7 +26,7 @@ class DtoEventsSubscriber implements EventSubscriberInterface {
 
     public function __construct(
         private RequestStack $stack,
-        private Translator $translator,
+        private TranslatorInterface $translator,
         private DtoValidatorService $validator
     ) { 
 
