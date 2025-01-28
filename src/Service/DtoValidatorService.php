@@ -303,7 +303,35 @@ class DtoValidatorService {
 
                 $method = s($field)->camel()->title();
                 
-                return ($payload->hasKey($field) && in_array($payload->get($field), $values)) || ($onUpdate && !$payload->hasKey($field) && in_array($subject->{"get$method"}(), $values)); 
+                return $payload->hasKey($field) && in_array($payload->get($field), $values); 
+            
+            });
+
+            $expression->register('is', function (string $field, array $values) { 
+
+                $sValue = join(", ", array_map(function($v) {
+
+                    if(is_string($v)) {
+
+                        return "\"$v\"";
+                    }
+
+                    if(is_integer($v)) {
+
+                        return $v;
+                    }
+
+                    throw new UnexpectedValueException($v, "string | integer");
+
+                }, $values));
+
+                return sprintf('is(%s)', "[ $sValue ]");
+            
+            }, function($arguments, $field, $values) use ($payload, $onUpdate, $subject) { 
+
+                $method = s($field)->camel()->title();
+                
+                return $onUpdate && !$payload->hasKey($field) && in_array($subject->{"get$method"}(), $values); 
             
             });
 
@@ -311,7 +339,8 @@ class DtoValidatorService {
                 'onCreate' => $onCreate,
                 'onUpdate' => $onUpdate,
                 'subject'  => $subject,
-                'payload'  => $payload
+                'payload'  => $payload,
+                ...$dto->additionalExpressionContext()
             ]);
 
         }

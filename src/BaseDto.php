@@ -129,4 +129,9 @@ class BaseDto {
 
     }
 
+    public function additionalExpressionContext(): array {
+
+        return [];
+    }
+
 }
