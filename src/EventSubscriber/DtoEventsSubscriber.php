@@ -6,7 +6,6 @@ use Teoalboo\DtoValidator\Exception\DtoPayloadValidationException;
 use Teoalboo\DtoValidator\Attribute\DtoPayload;
 use ReflectionFunction;
 use RuntimeException;
-use stdClass;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -91,12 +90,12 @@ class DtoEventsSubscriber implements EventSubscriberInterface {
         foreach ($dtoParams as $dtoParam) {
 
             [ $dtoParam->getName() => $dto ] = $namedArguments;
-
-            $dto = $this->validator->populate($dto);
             
             [ $attribute ] = $dtoParam->getAttributes(DtoPayload::class) + [ null ];
 
             $attribute = $attribute?->newInstance() ?? new DtoPayload();
+            
+            $dto = $this->validator->populate($dto, $attribute);
 
             if ($subjectRef = $attribute->getSubject()) {
 

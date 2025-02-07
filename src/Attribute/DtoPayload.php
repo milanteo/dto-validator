@@ -4,25 +4,29 @@ namespace Teoalboo\DtoValidator\Attribute;
 
 use Attribute;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\ExpressionLanguage\Expression;
+
+enum PayloadLocation {
+    case Content;
+    case Query;
+}
 
 #[Attribute(Attribute::TARGET_PARAMETER)]
 class DtoPayload {
 
-    private mixed $subject = null;
-
     public function __construct(
-        private int $errorCode = Response::HTTP_BAD_REQUEST,
-        mixed $subject = null
-    ) {
-
-        $this->subject = $subject;
-
-    }
+        private int              $errorCode = Response::HTTP_BAD_REQUEST,
+        private ?PayloadLocation $location  = PayloadLocation::Content,
+        private mixed            $subject   = null
+    ) { }
 
     public function getErrorCode(): int {
 
         return $this->errorCode;
+    }
+
+    public function getPayloadLocation(): PayloadLocation {
+
+        return $this->location;
     }
 
     public function setSubject(mixed $subject): self {

@@ -19,6 +19,8 @@ use Teoalboo\DtoValidator\BaseDto;
 use Teoalboo\DtoValidator\Exception\DtoPayloadValidationException;
 use Symfony\Component\HttpFoundation\RequestStack;
 use stdClass;
+use Teoalboo\DtoValidator\Attribute\PayloadLocation;
+
 use function Symfony\Component\String\s;
 
 class DtoValidatorService {
@@ -34,9 +36,14 @@ class DtoValidatorService {
      * @param  T $dto
      * @return T
      */
-    public function populate(BaseDto $dto): BaseDto {
+    public function populate(BaseDto $dto, DtoPayload $attr): BaseDto {
 
-        $decode = json_decode($this->stack->getCurrentRequest()->getContent());
+        $request = $this->stack->getCurrentRequest();
+
+        $decode = json_decode(match ($attr->getPayloadLocation()) {
+            PayloadLocation::Query   => json_encode($request->query->all()),
+            PayloadLocation::Content => $request->getContent(),
+        });
 
         $dto->setContent(is_object($decode) ? $decode : new stdClass());
 
