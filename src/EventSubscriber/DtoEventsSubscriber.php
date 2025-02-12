@@ -83,13 +83,16 @@ class DtoEventsSubscriber implements EventSubscriberInterface {
 
         $namedArguments = $event->getNamedArguments();
 
-        // $reflector = new ReflectionFunction($event->getController()(...));
+        $reflector = new ReflectionFunction($event->getController()(...));
 
-        $dtoParams = array_filter($namedArguments, fn($v) => is_subclass_of($v, BaseDto::class));
+        $dtoParams = array_filter($reflector->getParameters(), fn($p) => is_subclass_of(
+            $namedArguments[$p->getName()], 
+            BaseDto::class
+        ));
 
         foreach ($dtoParams as $dtoParam) {
 
-            [ $dtoParam->getName() => $dto ] = $namedArguments;
+            $dto = $namedArguments[$dtoParam->getName()];
             
             [ $attribute ] = $dtoParam->getAttributes(DtoPayload::class) + [ null ];
 
