@@ -8,7 +8,6 @@ use ReflectionFunction;
 use RuntimeException;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\Event\ControllerArgumentsEvent;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
@@ -24,7 +23,6 @@ class DtoEventsSubscriber implements EventSubscriberInterface {
     private ExpressionLanguage $expression;
 
     public function __construct(
-        private RequestStack $stack,
         private TranslatorInterface $translator,
         private DtoValidatorService $validator
     ) { 
@@ -79,7 +77,7 @@ class DtoEventsSubscriber implements EventSubscriberInterface {
 
     public function onKernelControllerArguments(ControllerArgumentsEvent $event): void {
 
-        $request = $this->stack->getCurrentRequest();
+        $request = $event->getRequest();
 
         $namedArguments = $event->getNamedArguments();
 
@@ -98,9 +96,11 @@ class DtoEventsSubscriber implements EventSubscriberInterface {
 
             $attribute = $attribute?->newInstance() ?? new DtoPayload();
             
-            $dto = $this->validator->populate($dto, $attribute);
+            $dto = $this->validator->populate($dto, $request, $attribute);
 
             if ($subjectRef = $attribute->getSubject()) {
+
+                $subject = null;
 
                 if (is_array($subjectRef)) {
                     foreach ($subjectRef as $refKey => $ref) {
@@ -120,7 +120,7 @@ class DtoEventsSubscriber implements EventSubscriberInterface {
         
     }
 
-    public function getDtoSubject(string|Expression $subjectRef, Request $request, array $arguments): mixed {
+    private function getDtoSubject(string|Expression $subjectRef, Request $request, array $arguments): mixed {
 
         if ($subjectRef instanceof Expression) {
 

@@ -17,8 +17,8 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Teoalboo\DtoValidator\Attribute\DtoPayload;
 use Teoalboo\DtoValidator\BaseDto;
 use Teoalboo\DtoValidator\Exception\DtoPayloadValidationException;
-use Symfony\Component\HttpFoundation\RequestStack;
 use stdClass;
+use Symfony\Component\HttpFoundation\Request;
 use Teoalboo\DtoValidator\Attribute\PayloadLocation;
 
 use function Symfony\Component\String\s;
@@ -27,8 +27,7 @@ class DtoValidatorService {
 
     public function __construct(
         private ContainerInterface $container,
-        private ValidatorInterface $validator,
-        private RequestStack $stack
+        private ValidatorInterface $validator
     ) { }
 
     /**
@@ -36,13 +35,11 @@ class DtoValidatorService {
      * @param  T $dto
      * @return T
      */
-    public function populate(BaseDto $dto, DtoPayload $attr): BaseDto {
+    public function populate(BaseDto $dto, Request $request, DtoPayload $attr): BaseDto {
 
-        $request = $this->stack->getCurrentRequest();
-
-        $decode = json_decode(match ($attr->getPayloadLocation()) {
+        $decode = json_decode(match($attr->getPayloadLocation()) {
             PayloadLocation::Query   => json_encode($request->query->all()),
-            PayloadLocation::Content => $request->getContent(),
+            PayloadLocation::Content => $request->getContent()
         });
 
         $dto->setContent(is_object($decode) ? $decode : new stdClass());
@@ -84,7 +81,7 @@ class DtoValidatorService {
 
     }
 
-    function checkValues(BaseDto $dto, DtoPayload $constraint): void {
+    private function checkValues(BaseDto $dto, DtoPayload $constraint): void {
         
         foreach ($dto->getInitializedProperties() as $property => $attribute) {
 
@@ -113,7 +110,7 @@ class DtoValidatorService {
 
     }
 
-    function checkDisabledProperties(BaseDto $dto, DtoPayload $constraint, array &$checkedFields = []): void {
+    private function checkDisabledProperties(BaseDto $dto, DtoPayload $constraint, array &$checkedFields = []): void {
 
         $currentCheck = array_filter($dto->getEnabledProperties(includeErrorProperties: true), function($attribute, $propertyName) use (&$checkedFields) {
 
@@ -149,7 +146,7 @@ class DtoValidatorService {
 
     }
 
-    function checkNullableProperties(BaseDto $dto, DtoPayload $constraint) {
+    private function checkNullableProperties(BaseDto $dto, DtoPayload $constraint) {
 
         foreach ($dto->getInitializedProperties() as $property => $attribute) {
 
@@ -351,6 +348,5 @@ class DtoValidatorService {
         }
 
     }
-
 
 }

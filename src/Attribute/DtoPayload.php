@@ -13,11 +13,16 @@ enum PayloadLocation {
 #[Attribute(Attribute::TARGET_PARAMETER)]
 class DtoPayload {
 
+    private mixed $subject;
+
     public function __construct(
-        private int              $errorCode = Response::HTTP_BAD_REQUEST,
+        private int $errorCode = Response::HTTP_BAD_REQUEST,
         private ?PayloadLocation $location  = PayloadLocation::Content,
-        private mixed            $subject   = null
-    ) { }
+        ?string $subject = null
+    ) {
+
+        $this->subject = $subject;
+    }
 
     public function getErrorCode(): int {
 
