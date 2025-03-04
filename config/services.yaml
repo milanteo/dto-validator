@@ -17,7 +17,6 @@ services:
 
   Teoalboo\DtoValidator\EventSubscriber\DtoEventsSubscriber:
     arguments: 
-      $stack:      '@request_stack'
       $translator: '@translator'
       $validator:  '@dto_validator'
     tags: ['kernel.event_subscriber']
